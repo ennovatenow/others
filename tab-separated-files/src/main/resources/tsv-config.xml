@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:batch="http://www.springframework.org/schema/batch" xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="	
+	http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.1.xsd
+	http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+	http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch-2.1.xsd">
+
+	
+	<import resource="batch-config.xml" />
+	<import resource="database-config.xml" />
+
+	<batch:job id="tsvJob" job-repository="jobRepository">
+		<batch:step id="step1">
+			<batch:tasklet>
+				<batch:chunk reader="itemReader" writer="itemWriter"
+					processor="itemProcessor" commit-interval="50">
+				</batch:chunk>
+			</batch:tasklet>
+		</batch:step>
+	</batch:job>
+
+	<bean id="itemReader" class="org.springframework.batch.item.file.FlatFileItemReader"
+		scope="step">
+		<property name="lineMapper">
+			<bean class="org.springframework.batch.item.file.mapping.DefaultLineMapper">
+				<property name="lineTokenizer">
+					<bean
+						class="org.springframework.batch.item.file.transform.DelimitedLineTokenizer">
+						<property name="delimiter">
+							<util:constant
+								static-field="org.springframework.batch.item.file.transform.DelimitedLineTokenizer.DELIMITER_TAB" />
+						</property>
+						<property name="names" value="name,credit" />
+					</bean>
+				</property>
+				<property name="fieldSetMapper">
+					<bean
+						class="org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper">
+						<property name="targetType"
+							value="com.evolvus.examples.others.domain.CustomerCredit" />
+					</bean>
+				</property>
+			</bean>
+		</property>
+		<property name="resource" value="file:#{jobParameters[inputFile]}" />
+	</bean>
+
+	<bean id="itemProcessor"
+		class="com.evolvus.examples.others.processor.CustomerCreditProcessor" />
+
+	<bean id="itemWriter" class="org.springframework.batch.item.file.FlatFileItemWriter"
+		scope="step">
+		<property name="resource" value="file:#{jobParameters[outputFile]}" />
+		<property name="lineAggregator">
+			<bean
+				class="org.springframework.batch.item.file.transform.DelimitedLineAggregator">
+				<property name="delimiter">
+					<util:constant
+						static-field="org.springframework.batch.item.file.transform.DelimitedLineTokenizer.DELIMITER_COMMA" />
+				</property>
+				<property name="fieldExtractor">
+					<bean
+						class="org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor">
+						<property name="names" value="name,credit" />
+					</bean>
+				</property>
+			</bean>
+		</property>
+	</bean>
+
+</beans>

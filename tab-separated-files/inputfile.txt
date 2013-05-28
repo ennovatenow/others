@@ -1,0 +1,6 @@
+customer11	10
+customer12	20
+customer13	30
+customer14	40
+customer15	50
+customer16	60
